@@ -1,4 +1,4 @@
-USE Ferienclub;
+-- USE Ferienclub;
 
 -- Aufgabe 7.1
 -- a) Appartments vom Oskar Null ausgeben, App Nr, Größe, Aufenthaltsdauer (Tage)
@@ -23,6 +23,16 @@ SELECT COUNT(*) AS AnzahlMaleGebucht
 FROM tbl_buchungen
 WHERE Appartement = 23;
 
+-- Lösung 2 (Anzahl Male gebucht met eckige Klammern, dan lukt spatie er tussen)
+SELECT COUNT(*) AS [Anzahl Male Gebucht]
+FROM tbl_buchungen
+WHERE Appartement = 23;
+
+-- Lösung 3 (Anzahl Male gebucht zwischen "", dan lukt spatie ertussen)
+SELECT COUNT(*) AS "Anzahl Male Gebucht"
+FROM tbl_buchungen
+WHERE Appartement = 23;
+
 -- d) Wie oft Apt größer als 40 m2 gebucht
 SELECT COUNT(*) AS AnzahlAptGrößer40
 FROM tbl_buchungen AS buc
@@ -35,11 +45,19 @@ SELECT TOP 1 apt.AppartementNr, Apt.Größe, Adr.Anrede + ' ' + Adr.Nachname AS Ku
 FROM tbl_Adressen AS Adr
 INNER JOIN tbl_buchungen AS Buc
 ON Adr.KundenNr = Buc.KundenNr
-
 INNER JOIN tbl_Appartements AS Apt
 ON Buc.Appartement = Apt.AppartementNr
 WHERE Nachname = 'Haupter' AND Anrede = 'Frau'
 ORDER BY Apt.Größe DESC;
+
+-- e) Lösung 2
+SELECT MAX(Apt.Größe) AS Größe
+FROM tbl_Appartements AS Apt
+INNER JOIN tbl_buchungen AS Buc
+ON Apt.AppartementNr = Buc.Appartement
+INNER JOIN tbl_Adressen AS Adr
+ON Adr.KundenNr = Buc.KundenNr
+WHERE Nachname = 'Haupter' AND Anrede = 'Frau';
 
 -- f) Umsatz ausgeben vom Frau Petra Klein
 SELECT adr.Nachname, adr.Vorname, 
@@ -52,6 +70,18 @@ ON buc.Appartement = app.AppartementNr
 INNER JOIN tbl_preisgruppe AS pre
 ON app.Preisgruppe = pre.Preisgruppe
 WHERE adr.Nachname = 'Klein';
+
+-- Lösung 2
+SELECT SUM(DATEDIFF(DAY, Anreise, Abreise)) * pre.PreisProTag AS Umsatz
+FROM tbl_Adressen AS adr
+INNER JOIN tbl_buchungen AS buc
+ON adr.KundenNr = buc.KundenNr
+INNER JOIN tbl_Appartements AS app
+ON buc.Appartement = app.AppartementNr
+INNER JOIN tbl_preisgruppe AS pre
+ON app.Preisgruppe = pre.Preisgruppe
+WHERE adr.Nachname = 'Klein'
+GROUP BY pre.PreisProTag;
 
 -- g) Gesamt-Umsatz Apps Preisgruppe 2
 SELECT app.Preisgruppe, app.AppartementNr,
@@ -67,8 +97,8 @@ WHERE app.Preisgruppe = 2 AND YEAR(Anreise) = 2019;
 
 -- SUMME mit Wochenberücksichtigung
 SELECT SUM(
-(DATEDIFF(DAY, Anreise, Abreise) / 7) * pre.PreisProWoche + 
-(DATEDIFF(DAY, Anreise, Abreise) % 7) * pre.PreisProTag) AS Umsatz
+(DATEDIFF(DAY, buc.Anreise, buc.Abreise) / 7) * pre.PreisProWoche + 
+(DATEDIFF(DAY, buc.Anreise, buc.Abreise) % 7) * pre.PreisProTag) AS Umsatz
 FROM tbl_Adressen AS adr
 INNER JOIN tbl_buchungen AS buc
 ON adr.KundenNr = buc.KundenNr
@@ -76,7 +106,7 @@ INNER JOIN tbl_Appartements AS app
 ON buc.Appartement = app.AppartementNr
 INNER JOIN tbl_preisgruppe AS pre
 ON app.Preisgruppe = pre.Preisgruppe
-WHERE app.Preisgruppe = 2 AND YEAR(Anreise) = 2018;
+WHERE app.Preisgruppe = '2' AND YEAR(Anreise) = '2019';
 
 -- Summe mit nur PreisProTag
 SELECT SUM(
@@ -88,7 +118,18 @@ INNER JOIN tbl_Appartements AS app
 ON buc.Appartement = app.AppartementNr
 INNER JOIN tbl_preisgruppe AS pre
 ON app.Preisgruppe = pre.Preisgruppe
-WHERE app.Preisgruppe = 2 AND YEAR(Anreise) = 2018;
+WHERE app.Preisgruppe = 2 AND YEAR(Anreise) = 2019;
+
+-- Lösung Maikowski
+SELECT SUM(DATEDIFF(DAY, Anreise, Abreise) * pre.PreisProTag) AS Umsatz
+FROM tbl_Adressen AS adr
+INNER JOIN tbl_buchungen AS buc
+ON adr.KundenNr = buc.KundenNr
+INNER JOIN tbl_Appartements AS app
+ON buc.Appartement = app.AppartementNr
+INNER JOIN tbl_preisgruppe AS pre
+ON app.Preisgruppe = pre.Preisgruppe
+WHERE app.Preisgruppe = 2 AND YEAR(Abreise) = 2019;
 
 -- Zusatsaufgabe Kunden aus demselben Ort
 -- KundenNr, Vorname, Nachname, Ort, 
@@ -96,3 +137,11 @@ WHERE app.Preisgruppe = 2 AND YEAR(Anreise) = 2018;
 SELECT KundenNr, Vorname, Nachname, Ort
 FROM tbl_Adressen
 ORDER BY (Ort);
+
+-- Lösung Maikowski
+SELECT	addr1.KundenNr, addr1.Vorname, addr1.Nachname, addr1.Ort,
+		addr2.KundenNr, addr2.Vorname, addr2.Nachname, addr2.Ort
+FROM tbl_Adressen AS addr1
+INNER JOIN tbl_Adressen AS addr2
+ON addr1.KundenNr <> addr2.KundenNr
+AND addr1.Ort = addr2.Ort
